@@ -1,0 +1,50 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Krydsord", "Krydsord\Krydsord.csproj", "{C452E163-A17D-410E-9EBE-39F057210D17}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Krydsord.IoC", "Krydsord.IoC\Krydsord.IoC.csproj", "{13A79AA6-75CC-4BD5-AE8F-BDC131DAE132}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Krydsord.Generator", "Krydsord.Generator\Krydsord.Generator.csproj", "{EC1E7BF4-292D-4ABA-9787-B55AE2CCE5A7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Krydsord.Interfaces", "Krydsord.Interfaces\Krydsord.Interfaces.csproj", "{750EB3BE-F336-4F79-9EA2-B9B50193DFB8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Krydsord.Helpers", "Krydsord.Helpers\Krydsord.Helpers.csproj", "{24549B70-FD95-41EB-A2DF-A103597187B5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Krydsord.Views", "Krydsord.Views\Krydsord.Views.csproj", "{0F7225B0-2EC7-4205-83C7-1D3DCC0DF8E9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C452E163-A17D-410E-9EBE-39F057210D17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C452E163-A17D-410E-9EBE-39F057210D17}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C452E163-A17D-410E-9EBE-39F057210D17}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C452E163-A17D-410E-9EBE-39F057210D17}.Release|Any CPU.Build.0 = Release|Any CPU
+		{13A79AA6-75CC-4BD5-AE8F-BDC131DAE132}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{13A79AA6-75CC-4BD5-AE8F-BDC131DAE132}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{13A79AA6-75CC-4BD5-AE8F-BDC131DAE132}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{13A79AA6-75CC-4BD5-AE8F-BDC131DAE132}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EC1E7BF4-292D-4ABA-9787-B55AE2CCE5A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC1E7BF4-292D-4ABA-9787-B55AE2CCE5A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC1E7BF4-292D-4ABA-9787-B55AE2CCE5A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC1E7BF4-292D-4ABA-9787-B55AE2CCE5A7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{750EB3BE-F336-4F79-9EA2-B9B50193DFB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{750EB3BE-F336-4F79-9EA2-B9B50193DFB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{750EB3BE-F336-4F79-9EA2-B9B50193DFB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{750EB3BE-F336-4F79-9EA2-B9B50193DFB8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{24549B70-FD95-41EB-A2DF-A103597187B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24549B70-FD95-41EB-A2DF-A103597187B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24549B70-FD95-41EB-A2DF-A103597187B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24549B70-FD95-41EB-A2DF-A103597187B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F7225B0-2EC7-4205-83C7-1D3DCC0DF8E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F7225B0-2EC7-4205-83C7-1D3DCC0DF8E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F7225B0-2EC7-4205-83C7-1D3DCC0DF8E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F7225B0-2EC7-4205-83C7-1D3DCC0DF8E9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
