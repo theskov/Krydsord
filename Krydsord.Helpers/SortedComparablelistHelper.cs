@@ -11,42 +11,43 @@ namespace Krydsord.Helpers
     {
         public static List<T> StartsWith(List<T> s, T prefix, int bogstavIndex = 0)
         {
-            var first = BinaryFindFirstOrLastFromAny(s, prefix, s.Count / 2, Direction.Down, bogstavIndex);
-            if (!s[first].StartsWith(prefix, bogstavIndex)) return new List<T>();
-            var last = BinaryFindFirstOrLastFromAny(s, prefix, first, Direction.Up, bogstavIndex);
+            var first = BinaryFindFirstOrLast(s, prefix, Direction.Down, bogstavIndex);
+            if (first < 0) return new List<T>();
+            var last = BinaryFindFirstOrLast(s, prefix, Direction.Up, bogstavIndex, first);
 
             return s.GetRange(first, last - first);
         }
 
-        private static int BinaryFindFirstOrLastFromAny(List<T> list, T prefix, int anyMatchingIndex, Direction direction, int bogstavIndex = 0)
+        private static int BinaryFindFirstOrLast(List<T> list, T prefix, Direction direction, int bogstavIndex, int min = 0)
         {
-            int length = direction == Direction.Down ? anyMatchingIndex : list.Count - anyMatchingIndex; // length from index to end of list in specified direction
-            int divisor = 2;
-            int index = direction == Direction.Down ? length / divisor : anyMatchingIndex + (length / divisor); // Set index halfway from matching index and end of list in specified direction
-            T currentItem = list.ElementAt(index);
-            while (true)
+            int max = list.Count - 1;
+            int comparison = -1;
+
+            while (min < max)
             {
-                var oldIndex = index;
-                var comparison = currentItem.CompareTo(prefix, bogstavIndex);
-
-                // Too far up
-                if (!currentItem.StartsWith(prefix) && comparison > 0) direction = Direction.Down;
-                // Too far down
-                else if (!currentItem.StartsWith(prefix) && comparison < 0) direction = Direction.Up;
-                // If none of the above matched, we are within the range of matches, should move avay from anyMatchingIndex
-                else direction = index > anyMatchingIndex ? Direction.Down : Direction.Up;
-                divisor *= 2;
-                if (direction == Direction.Up) index += length / divisor;
-                else index -= length / divisor;
-
-                if (oldIndex == index)
+                int index = direction == Direction.Down
+                                ? (max + min) / 2
+                                : (max + min + 1) / 2;
+                T currentItem = list.ElementAt(index);
+                comparison = currentItem.CompareToPrefix(prefix, bogstavIndex);
+                switch (direction)
                 {
-                    if (currentItem.StartsWith(prefix, bogstavIndex)) return index;
-                    if (direction == Direction.Down) return ++index; // one too far down
-                    return --index; // on too high
+                    case Direction.Up:
+                        if (comparison < 0)
+                            min = index + 1;
+                        else
+                            max = index;
+                        break;
+                    case Direction.Down:
+                        if (comparison > 0)
+                            max = index - 1;
+                        else
+                            min = index;
+                        break;
                 }
-                currentItem = list.ElementAt(index);
             }
+            if (max == min && comparison == 0) return min;
+            return -1;
         }
 
         private enum Direction

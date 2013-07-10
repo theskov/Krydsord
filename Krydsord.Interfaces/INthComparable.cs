@@ -9,5 +9,6 @@ namespace Krydsord.Interfaces
     public interface INthComparable : IComparable
     {
         int CompareTo(object obj, int index);
+        int CompareToPrefix(object obj, int index);
     }
 }

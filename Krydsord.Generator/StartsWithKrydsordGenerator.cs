@@ -21,10 +21,9 @@ namespace Krydsord.Generator
         protected override void FixKrydsord()
         {
             var latestAffectedOrdlisteOrd = (StatefulOrdlisteOrd)ordlisteOrdPrLinje[affectedItem.Key][affectedItem.Value];
-            // We know all lists are non-empty, or the previous words could not have been added
             foreach (KeyValuePair<int, List<char>> keyValuePair in fejlOrd)
             {
-                latestAffectedOrdlisteOrd.FilterOrdliste(keyValuePair.Key,keyValuePair.Value);
+                if (keyValuePair.Value.Any()) latestAffectedOrdlisteOrd.FilterOrdliste(keyValuePair.Key,keyValuePair.Value);
                 if (!lastAddedWord.CurrentOrdliste.Any())
                 {
                     --wordCounter;
@@ -38,14 +37,14 @@ namespace Krydsord.Generator
 
         protected override bool CheckKrydsord()
         {
-            fejlOrd = new Dictionary<int, List<char>>();
             bool fejlOrdFundet;
             do
             {
                 fejlOrdFundet = false;
                 ConvertToResult();
                 lastAddedWord = (StatefulOrdlisteOrd)ordlisteOrd[wordCounter - 1];
-                
+
+                fejlOrd = new Dictionary<int, List<char>>();
                 // Initialize fejlord
                 for (int i = 0; i < lastAddedWord.length; ++i)
                 {
@@ -110,9 +109,7 @@ namespace Krydsord.Generator
             public int column;
             private IOrdliste ordliste;
             //private IList<string> currentOrdliste;
-            private List<KompletOrd> kompletteOrd;
-            private bool initialOrdlisteState;
-
+            private Dictionary<int, List<KompletOrd>> kompletteOrdSortedByNth;
 
             public StatefulOrdlisteOrd(int index, string ord, int wordcountOfThisLength, int row, int column, IOrdliste ordliste)
                 : base(index, ord, wordcountOfThisLength)
@@ -126,39 +123,45 @@ namespace Krydsord.Generator
             public void ResetOrdliste()
             {
                 //currentOrdliste = ordliste.GetOrd(ord.Length);
-                kompletteOrd = ordliste.GetOrd(ord.Length).Select(currentOrd => new KompletOrd(currentOrd)).ToList();
-                initialOrdlisteState = true;
+                kompletteOrdSortedByNth = new Dictionary<int, List<KompletOrd>>();
+                for (int i = 0; i < ord.Length; ++i)
+                {
+                    // TODO: We would prefer to only have a single KompletOrd for each ord
+                    // TODO: Kompletord skal nok være KompletListe - vi er nødt til at have dem sorteret pr bogstav.
+                    kompletteOrdSortedByNth[i] = ordliste.GetOrd(ord.Length, i).Select(currentOrd => new KompletOrd(currentOrd)).ToList();
+                }
             }
 
             //public void FilterOrdliste(IList<string> filterList)
             //{
             //    if (initialOrdlisteState) currentOrdliste = filterList;
             //    else currentOrdliste = currentOrdliste.Intersect(filterList).ToList();
-            //}
+            //} 
 
             public void FilterOrdliste(int index, List<char> letters)
             {
-                //kompletteOrd = kompletteOrd.Where(kompletOrd => kompletOrd.Rotation(index).First() == letter);
+                //kompletteOrdSortedByNth = kompletteOrdSortedByNth.Where(kompletOrd => kompletOrd.Rotation(index).First() == letter);
                 List<KompletOrd> lovligeOrd = new List<KompletOrd>();
+
                 foreach (char letter in letters)
                 {
                     lovligeOrd = lovligeOrd.Union(
                         SortedComparableListHelper<KompletOrd>.StartsWith(
-                            kompletteOrd,
+                            kompletteOrdSortedByNth[index],
                             new KompletOrd(letter.ToString()),
                             index)
                         ).ToList();
                 }
-                kompletteOrd = lovligeOrd;
+                kompletteOrdSortedByNth = lovligeOrd;
             }
 
             public IEnumerable<string> CurrentOrdliste
             {
-                get { return kompletteOrd.Select(kompletOrd => kompletOrd.Ord); }
+                get { return kompletteOrdSortedByNth.Select(kompletOrd => kompletOrd.Ord); }
             }
         }
 
-        // Class that contains all rotations of a word and supports comparison and StartsWith on any rotation
+        // Class that contains all rotations of a word and supports comparison and StartsWith on any rotation 
         protected class KompletOrd : INthComparable, IStartsWith
         {
             private int length;
@@ -192,6 +195,12 @@ namespace Krydsord.Generator
             public int CompareTo(object obj, int index)
             {
                 return rotationer[index].CompareTo(((KompletOrd) obj).GetValue(index));
+            }
+
+            public int CompareToPrefix(object obj, int index)
+            {
+                int prefixLength = ((KompletOrd) obj).length;
+                return rotationer[index].Substring(0,prefixLength).CompareTo(((KompletOrd)obj).GetValue());
             }
 
             public bool StartsWith(IStartsWith prefix)
