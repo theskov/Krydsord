@@ -14,13 +14,13 @@ namespace Krydsord.Helpers
             if (first < 0) return new List<string>();
             var last = BinaryFindFirstOrLast(s, prefix, Direction.Up, first);
             
-            return s.GetRange(first, last - first);
+            return s.GetRange(first, last - first + 1);
         }
 
         public static bool AnyStartsWith(this List<string> s, string prefix)
         {
             var index = BinarySearchAny(s, prefix);
-            return index >= 0 && s.ElementAt(index).StartsWith(prefix);
+            return index >= 0 && s.ElementAt(index).StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase);
         }
 
         private static int BinarySearchAny(List<string> list, string prefix)
@@ -33,7 +33,7 @@ namespace Krydsord.Helpers
             {
                 int index = (max + min)/2;
                 string currentItem = list.ElementAt(index).Substring(0, length);
-                int comparison = String.Compare(prefix, currentItem);
+                int comparison = String.Compare(prefix, currentItem, StringComparison.InvariantCultureIgnoreCase);
                 if (comparison > 0)
                     min = index + 1;
                 else if (comparison < 0)
@@ -56,7 +56,7 @@ namespace Krydsord.Helpers
                                 : (max + min + 1)/2;
 
                 string currentItem = list.ElementAt(index).Substring(0, length);
-                comparison = String.Compare(prefix, currentItem);
+                comparison = String.Compare(prefix, currentItem, StringComparison.InvariantCultureIgnoreCase);
                 switch (direction)
                 {
                         case Direction.Down:
@@ -73,7 +73,7 @@ namespace Krydsord.Helpers
                         break;
                 }
             }
-            if (max == min && String.Compare(prefix, list.ElementAt(min).Substring(0, length)) == 0) return min;
+            if (max == min && String.Compare(prefix, list.ElementAt(min).Substring(0, length), StringComparison.InvariantCultureIgnoreCase) == 0) return min;
             return -1;
         }
 

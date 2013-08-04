@@ -80,7 +80,6 @@ namespace Krydsord.Generator
                     var nytOrd = new PlacedOrdlisteOrd(ordindex, nextOrd, ordliste.GetOrd(length).Count, currentLine, currentChar);
                     ordlisteOrdPrLinje[currentLine].Add(nytOrd);
                     ordlisteOrd.Add(nytOrd);
-                    KeyValuePair<int, int> dummy;
                     currentChar += length + 1;
                 }
             }

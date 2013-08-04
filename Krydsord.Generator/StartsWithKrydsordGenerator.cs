@@ -9,7 +9,6 @@ namespace Krydsord.Generator
     public class StartsWithKrydsordGenerator : DanVandretCheckLodretKrydsordGenerator
     {
         private Dictionary<int, List<char>> fejlOrd;
-        private KeyValuePair<int, int> affectedItem;
         private int wordCounter = 1;
         private StatefulOrdlisteOrd lastAddedWord;
         public StartsWithKrydsordGenerator(IOrdliste ordliste, IView view)
@@ -20,19 +19,33 @@ namespace Krydsord.Generator
 
         protected override void FixKrydsord()
         {
-            var latestAffectedOrdlisteOrd = (StatefulOrdlisteOrd)ordlisteOrdPrLinje[affectedItem.Key][affectedItem.Value];
-            foreach (KeyValuePair<int, List<char>> keyValuePair in fejlOrd)
+            var latestAffectedOrdlisteOrd = (StatefulOrdlisteOrd) ordlisteOrd[wordCounter - 1];
+            if (!latestAffectedOrdlisteOrd.FilterOrdliste(fejlOrd)) // Filtering resulted in no legal words left
             {
-                if (keyValuePair.Value.Any()) latestAffectedOrdlisteOrd.FilterOrdliste(keyValuePair.Key,keyValuePair.Value);
-                if (!lastAddedWord.CurrentOrdliste.Any())
+                var faultingOrd = latestAffectedOrdlisteOrd;
+                bool result = false;
+                do
                 {
                     --wordCounter;
                     if (wordCounter == 0)
                         throw new Exception("Krydsordslayoutet der resulterer fra seed " + seed +
                                             " kunne ikke indeholde en lovlig krydsord - alle mulige kombinationer forsøgt uden held.");
-                }
-            }
+                    latestAffectedOrdlisteOrd = (StatefulOrdlisteOrd) ordlisteOrd[wordCounter - 1];
 
+                    // This word cannot make the faulting word correct
+                    // Reset its word list and move further back
+                    if (latestAffectedOrdlisteOrd.row == faultingOrd.row ||
+                        (latestAffectedOrdlisteOrd.row == faultingOrd.row - 1 && latestAffectedOrdlisteOrd.column >= faultingOrd.column + faultingOrd.length))
+                    {
+                        // Commenting out the line below is NOT safe - we might miss possible solutions
+                        latestAffectedOrdlisteOrd.ReInitializeOrdliste();
+                    }
+                    else
+                    {
+                        result = latestAffectedOrdlisteOrd.Next();
+                    }
+                } while (!result);
+            }
         }
 
         protected override bool CheckKrydsord()
@@ -62,13 +75,27 @@ namespace Krydsord.Generator
 
                     if (!ordliste.OrdDerStarterMed(fixedPart, currentColumnWord.Length))
                     {
-                        if(!fejlOrdFundet) affectedItem = new KeyValuePair<int, int>(lastAddedWord.row, ordlisteOrdPrLinje[lastAddedWord.row].IndexOf(lastAddedWord));
                         fejlOrdFundet = true;
-                        fejlOrd[currentColumn-lastAddedWord.column].AddRange(FindMuligeBogstaver(fixedPart.Substring(0, fixedPart.Length - 1), currentColumnWord.Length));
+                        break;
                     }
                 }
                 // The last word added caused no errors, so add another
                 if (!fejlOrdFundet) ++wordCounter;
+                else
+                { // Iterate again to find legal characters for all positions
+                    for (var currentColumn = lastAddedWord.column;
+                         currentColumn < lastAddedWord.column + lastAddedWord.length;
+                         ++currentColumn)
+                    {
+                        string currentColumnString = lodretKrydsord[currentColumn];
+                        int startOfAffectedWord = currentColumnString.Substring(0, lastAddedWord.row).LastIndexOf('#') + 1;
+                        var currentColumnWord = currentColumnString.Substring(startOfAffectedWord).Split('#').First();
+
+                        var fixedPart = currentColumnWord.Trim('.');
+                        fejlOrd[currentColumn - lastAddedWord.column].AddRange(
+                            FindMuligeBogstaver(fixedPart.Substring(0, fixedPart.Length - 1), currentColumnWord.Length));
+                    }
+                }
             } while (!fejlOrdFundet && wordCounter <= ordlisteOrd.Count);
             if (fejlOrdFundet) return false;
             DanLodretKrydsord(true);
@@ -79,7 +106,7 @@ namespace Krydsord.Generator
         // by iterating over the possible letters and checking for AnyStartsWith for each
         private IEnumerable<char> FindMuligeBogstaver(string substring, int wordLength)
         {
-            return ordliste.GetOrdDerStarterMed(substring, wordLength).Select(ord => ord.First()).Distinct();
+            return ordliste.GetOrdDerStarterMed(substring, wordLength).Select(ord => ord[substring.Length]).Distinct();
         }
 
         protected override void InitializeKrydsord()
@@ -96,7 +123,6 @@ namespace Krydsord.Generator
                     var nytOrd = new StatefulOrdlisteOrd(ordindex, nextOrd, ordliste.GetOrd(length).Count, currentLine, currentChar, ordliste);
                     ordlisteOrdPrLinje[currentLine].Add(nytOrd);
                     ordlisteOrd.Add(nytOrd);
-                    KeyValuePair<int, int> dummy;
                     currentChar += length + 1;
                 }
             }
@@ -105,11 +131,11 @@ namespace Krydsord.Generator
 
         protected class StatefulOrdlisteOrd : OrdlisteOrd
         {
+            private string initialOrd;
             public int row;
             public int column;
             private IOrdliste ordliste;
-            //private IList<string> currentOrdliste;
-            private Dictionary<int, List<KompletOrd>> kompletteOrdSortedByNth;
+            private OrdListeTreeStructure ordListeTree;
 
             public StatefulOrdlisteOrd(int index, string ord, int wordcountOfThisLength, int row, int column, IOrdliste ordliste)
                 : base(index, ord, wordcountOfThisLength)
@@ -117,112 +143,213 @@ namespace Krydsord.Generator
                 this.row = row;
                 this.column = column;
                 this.ordliste = ordliste;
-                ResetOrdliste();
+                initialOrd = ord;
+                ordListeTree = new OrdListeTreeStructure();
+                InitializeOrdliste();
             }
 
-            public void ResetOrdliste()
+             private void InitializeOrdliste()
+             {
+                 Ord = initialOrd;
+                 ordListeTree.Initialize(ordliste.GetOrd(length));
+             }
+
+             public void ReInitializeOrdliste()
+             {
+                 foreach (TreeStructureElement element in ordListeTree.Values)
+                 {
+                     element.ForceEnable();
+                 }
+                 Ord = initialOrd;
+             }
+
+            public bool FilterOrdliste(Dictionary<int, List<char>> letters)
             {
-                //currentOrdliste = ordliste.GetOrd(ord.Length);
-                kompletteOrdSortedByNth = new Dictionary<int, List<KompletOrd>>();
-                for (int i = 0; i < ord.Length; ++i)
+                foreach (char letter in ordListeTree.Keys.ToList())
                 {
-                    // TODO: We would prefer to only have a single KompletOrd for each ord
-                    // TODO: Kompletord skal nok være KompletListe - vi er nødt til at have dem sorteret pr bogstav.
-                    kompletteOrdSortedByNth[i] = ordliste.GetOrd(ord.Length, i).Select(currentOrd => new KompletOrd(currentOrd)).ToList();
+                    if (!letters[0].Contains(letter)) ordListeTree.Disable(letter);
+                    else
+                    {
+                        if (!InnerFilterOrdliste(1, letters, ordListeTree[letter].Tree)) ordListeTree.Disable(letter); // InnerFilter emptied the branch
+                    }
                 }
-            }
-
-            //public void FilterOrdliste(IList<string> filterList)
-            //{
-            //    if (initialOrdlisteState) currentOrdliste = filterList;
-            //    else currentOrdliste = currentOrdliste.Intersect(filterList).ToList();
-            //} 
-
-            public void FilterOrdliste(int index, List<char> letters)
-            {
-                //kompletteOrdSortedByNth = kompletteOrdSortedByNth.Where(kompletOrd => kompletOrd.Rotation(index).First() == letter);
-                List<KompletOrd> lovligeOrd = new List<KompletOrd>();
-
-                foreach (char letter in letters)
+                if (!ordListeTree.AnyEnabled)
                 {
-                    lovligeOrd = lovligeOrd.Union(
-                        SortedComparableListHelper<KompletOrd>.StartsWith(
-                            kompletteOrdSortedByNth[index],
-                            new KompletOrd(letter.ToString()),
-                            index)
-                        ).ToList();
+                    ordListeTree.ReInitialize();
+                    return false;
                 }
-                kompletteOrdSortedByNth = lovligeOrd;
+                SetWord();
+                return true;
             }
 
-            public IEnumerable<string> CurrentOrdliste
+            private bool InnerFilterOrdliste(int level, Dictionary<int, List<char>> letters, OrdListeTreeStructure tree)
             {
-                get { return kompletteOrdSortedByNth.Select(kompletOrd => kompletOrd.Ord); }
+                if (!letters.ContainsKey(level)) return true; // Leaf node
+                foreach (char letter in tree.Keys.ToList())
+                {
+                    if (!letters[level].Contains(letter)) tree.Disable(letter);
+                    else
+                    {
+                        if (!InnerFilterOrdliste(level + 1, letters, tree[letter].Tree)) // InnerFilter emptied the branch
+                            tree.Disable(letter);
+                    }
+                }
+                return tree.AnyEnabled;
+            }
+
+            private void SetWord()
+            {
+                var chars = new char[length];
+                var currentChars = Ord.ToCharArray();
+                var currentTree = ordListeTree;
+                int counter = 0;
+                while (currentTree.AnyEnabled)
+                {
+                    var largerElements = currentTree.SkipWhile(x => x.Key != currentChars[counter]).ToList();
+                    if (largerElements.Any(x => x.Value.Enabled)) {
+                        chars[counter++] = largerElements.First(x => x.Value.Enabled).Key;
+                        currentTree = largerElements.First(x => x.Value.Enabled).Value.Tree;
+                    }
+                    else {
+                        chars[counter++] = currentTree.First(x => x.Value.Enabled).Key;
+                        currentTree = currentTree.First(x => x.Value.Enabled).Value.Tree;
+                    }
+                }
+                Ord = new string(chars);
+            }
+
+            public bool Next()
+            {
+                if (!ordListeTree.RemoveWord(new Queue<char>(Ord)))
+                {
+                    ordListeTree.ReInitialize();
+                    return false;
+                }
+                SetWord();
+                return true;
+            }
+
+            private string currentWord;
+            public string CurrentWord
+            {
+                get { return currentWord; }
             }
         }
 
-        // Class that contains all rotations of a word and supports comparison and StartsWith on any rotation 
-        protected class KompletOrd : INthComparable, IStartsWith
+        [Serializable]
+        private class OrdListeTreeStructure : Dictionary<char, TreeStructureElement>
         {
-            private int length;
-            private List<string> rotationer;
-            public KompletOrd(string ord)
+            public void Initialize(IEnumerable<string> ordliste)
             {
-                rotationer = new List<string>();
-                length = ord.Length;
-                for (int i = 0; i < length; ++i)
+                Clear();
+                foreach (string ord in ordliste)
                 {
-                    rotationer.Add(ord.Rotate(i));
+                    var currentlevel = this;
+                    foreach (char c in ord)
+                    {
+                        if (!currentlevel.ContainsKey(c)) currentlevel.Add(c, new TreeStructureElement(true, new OrdListeTreeStructure()));
+                        currentlevel = currentlevel[c].Tree;
+                    }
                 }
             }
 
-            public string Ord
+            // This method assumes all branches below the first level has Enabled set to true
+            // Thus it should only be called when a call to RemoveFirst returns false.
+            public void ReInitialize()
             {
-                get { return rotationer[0]; }
+                foreach (TreeStructureElement element in Values) {
+                    element.Enabled = true;
+                }
+                // if (!CheckInvariant()) throw new Exception("TreeStructure not cleaned up correctly");
             }
 
-            public string Rotation(int antaltegn)
+            public bool RemoveWord(Queue<char> ord)
             {
-                if (antaltegn >= length) throw new ArgumentException();
-                return rotationer[antaltegn];
+                if (!ord.Any()) return false;
+                var currentElement = this[ord.Dequeue()];
+                if (!currentElement.Tree.RemoveWord(ord))
+                {
+                    currentElement.Enabled= false;
+                    
+                    // Reset the Enabled flags, so we can reuse the structure later
+                    foreach (TreeStructureElement element in currentElement.Tree.Values)
+                    {
+                        element.Enabled = true;
+                    }
+                }
+                return this.AnyEnabled;
             }
 
-            public int CompareTo(object obj)
-            {
-                return Ord.CompareTo(((KompletOrd) obj).GetValue());
+            public void Disable(char c){
+                this[c].Disable();
+
             }
 
-            public int CompareTo(object obj, int index)
+            public void Enable(char c)
             {
-                return rotationer[index].CompareTo(((KompletOrd) obj).GetValue(index));
+                this[c].Enable();
             }
 
-            public int CompareToPrefix(object obj, int index)
+            public bool AnyEnabled
             {
-                int prefixLength = ((KompletOrd) obj).length;
-                return rotationer[index].Substring(0,prefixLength).CompareTo(((KompletOrd)obj).GetValue());
+                get
+                {
+                    return Values.Any(x => x.Enabled);
+                }
             }
 
-            public bool StartsWith(IStartsWith prefix)
+            public bool CheckInvariant()
             {
-                return Ord.StartsWith(prefix.GetValue());
+                foreach (TreeStructureElement element in Values)
+                {
+                    if (!(element.Enabled && element.Tree.CheckInvariant())) return false;
+                }
+                return true;
+            }
+        }
+
+        private class TreeStructureElement
+        {
+            public bool Enabled;
+            public OrdListeTreeStructure Tree;
+
+            public TreeStructureElement(bool enabled, OrdListeTreeStructure tree)
+            {
+                Enabled = enabled;
+                Tree = tree;
             }
 
-            public bool StartsWith(IStartsWith prefix, int bogstavNummer)
+            public void ForceEnable()
             {
-                if (bogstavNummer > length) throw new ArgumentException();
-                return rotationer[bogstavNummer].StartsWith(prefix.GetValue());
+                Enabled = true;
+                foreach (TreeStructureElement element in Tree.Values)
+                {
+                    element.Enable();
+                }
             }
 
-            public string GetValue()
+            public void Enable()
             {
-                return Ord;
+                if (!Enabled)
+                {
+                    Enabled = true;
+                    foreach (TreeStructureElement element in Tree.Values)
+                    {
+                        element.Enable();
+                    }
+                }
             }
 
-            public string GetValue(int rotation)
+            public void Disable()
             {
-                if (rotation > length) throw new ArgumentException();
-                return rotationer[rotation];
+                if (Enabled)
+                {
+                    Enabled = false;
+                    foreach (TreeStructureElement element in Tree.Values)
+                    {
+                        element.Enable();
+                    }
+                }
             }
         }
     }

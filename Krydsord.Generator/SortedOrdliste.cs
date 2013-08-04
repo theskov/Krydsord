@@ -38,8 +38,9 @@ namespace Krydsord.Generator
             {
                 Add(ord[i]);
             }
-            view.TextLine("Antal ord: " + Count, true);
+            view.TextLine("Antal Ord: " + Count, true);
             view.TextLine("Danner ordlister pr længde:", true);
+            UniqueLetters = this.SelectMany(currentOrd => currentOrd.ToCharArray()).Distinct().ToList();
             InitializeOrdByLength();
         }
 
@@ -55,7 +56,7 @@ namespace Krydsord.Generator
                 {
                     ordCurrentLength.Add(ord);
                 }
-                ordCurrentLength.Sort();
+                ordCurrentLength.Sort(StringComparer.InvariantCultureIgnoreCase);
                 ordByLength[innerLength].Add(1, ordCurrentLength);
                 view.TextLine(innerLength.ToString() + ": " + ordCurrentLength.Count, true);
                 for (int currentLetter = 2; currentLetter <= length; ++currentLetter)
@@ -65,7 +66,7 @@ namespace Krydsord.Generator
                     {
                         ordByLength[innerLength][currentLetter].Add(ord.Rotate(currentLetter - 1));
                     }
-                    ordByLength[innerLength][currentLetter].Sort();
+                    ordByLength[innerLength][currentLetter].Sort(StringComparer.InvariantCultureIgnoreCase);
                 }
             }
         }
@@ -94,5 +95,7 @@ namespace Krydsord.Generator
         {
             return ordByLength[length][1].StartsWith(s);
         }
+
+        public List<char> UniqueLetters { get; private set; }
     }
 }

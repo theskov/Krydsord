@@ -14,5 +14,6 @@ namespace Krydsord.Interfaces
         bool OrdDerStarterMed(string s);
         bool OrdDerStarterMed(string s, int length);
         IList<string> GetOrdDerStarterMed(string s, int length);
+        List<char> UniqueLetters { get; }
     }
 }

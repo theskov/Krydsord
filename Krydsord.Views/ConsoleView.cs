@@ -9,7 +9,7 @@ namespace Krydsord.Views
 {
     public class ConsoleView : IView
     {
-        private int updateInterval = 1397;
+        private int updateInterval = 197;
         private int updateCounter = 0;
         public void Initialize(int updateInterval)
         {

@@ -88,7 +88,7 @@ namespace Krydsord.Generator
         {
             for (var currentLine = 0; currentLine < height; ++currentLine)
             {
-                krydsord[currentLine] = String.Join("#", ordlisteOrdPrLinje[currentLine].Select(olo => olo.ord)).PadRight(width, '#').ToCharArray();
+                krydsord[currentLine] = String.Join("#", ordlisteOrdPrLinje[currentLine].Select(olo => olo.Ord)).PadRight(width, '#').ToCharArray();
             }
         }
 
@@ -99,17 +99,17 @@ namespace Krydsord.Generator
         {
             public OrdlisteOrd(int index, string ord, int wordcountOfThisLength)
             {
-                this.initialIndex = index;
+                initialIndex = index;
                 this.index = index;
-                this.ord = ord;
-                this.wordCountOfThisLength = wordcountOfThisLength;
-                this.length = ord.Length;
+                Ord = ord;
+                wordCountOfThisLength = wordcountOfThisLength;
+                length = ord.Length;
             }
 
             public bool RollIndex(IOrdliste ordliste)
             {
                 index = ++index % wordCountOfThisLength;
-                ord = ordliste.GetOrd(length)[index];
+                Ord = ordliste.GetOrd(length)[index];
                 return index == initialIndex;
             }
 
@@ -122,7 +122,12 @@ namespace Krydsord.Generator
             private int initialIndex;
             private int wordCountOfThisLength;
             public int length;
-            public string ord;
+            private string ord;
+            public virtual string Ord
+            {
+                get { return ord; }
+                protected set { ord = value; }
+            }
         }
     }
 }

@@ -52,7 +52,7 @@ namespace Krydsord
                 AddRange(repository.Get(sti).Where((ord, index) => index % skipEvery == 0).Distinct());
             }
             else AddRange(repository.Get(sti).Select(ord => ord.ToLower()).Distinct(StringComparer.InvariantCultureIgnoreCase));
-            view.TextLine("Antal ord: " + Count , true);
+            view.TextLine("Antal Ord: " + Count , true);
             view.TextLine("Danner ordlister pr længde:", true);
             InitializeOrdByLength();
         }
@@ -68,7 +68,7 @@ namespace Krydsord
                 view.TextLine(length.ToString() + ": " + ordCurrentLength.Count, true);
                 for (int currentLetter = 2; currentLetter <= length; ++currentLetter)
                 {
-                    ordByLength[length].Add(currentLetter, ordCurrentLength.OrderBy(s => s.Rotate(currentLetter - 1)).ToList());
+                    ordByLength[length].Add(currentLetter, ordCurrentLength.OrderBy(s => s.Rotate(currentLetter - 1), StringComparer.InvariantCultureIgnoreCase).ToList());
                 }
             }
         }
@@ -87,5 +87,7 @@ namespace Krydsord
         {
             throw new NotImplementedException();
         }
+
+        public List<char> UniqueLetters { get; private set; }
     }
 }
